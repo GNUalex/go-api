@@ -3,7 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"time"
+
+	"gorm.io/gorm"
 )
 
 type Post struct {
@@ -15,25 +16,27 @@ type Post struct {
 	Content     string `json:"content"`
 }
 
-func GetPosts(w http.ResponseWriter, r *http.Request) {
-	var posts = []Post{
-		{
-			Id:          1,
-			Title:       "Sample blog post 1",
-			Slug:        "sample-blog-post-1",
-			PublishedAt: time.Now().String(),
-			Author:      "GNUalex",
-			Content:     "Proin tristique sagittis nisl, sit amet ultricies nulla vehicula nec. Ut imperdiet lacus eu porttitor feugiat. Aenean ipsum risus, rhoncus ac tempor at, rhoncus vitae dui. Aliquam erat volutpat. Morbi non vulputate ipsum.",
-		},
-	}
+func GetPosts(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var posts []Post
+		db.Find(&posts)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	json.NewEncoder(w).Encode(posts)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		json.NewEncoder(w).Encode(posts)
+	}
 }
 
-func GetPost(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	json.NewEncoder(w).Encode(r.PathValue("slug"))
+func GetPost(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var post *Post
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if err := db.Where("slug = ?", r.PathValue("slug")).First(&post).Error; err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode("Not found")
+		} else {
+			json.NewEncoder(w).Encode(post)
+		}
+	}
 }

@@ -1,17 +1,10 @@
 package main
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/GNUalex/go-api/handler"
+	"github.com/GNUalex/go-api/httpserver"
 )
 
 func main() {
-	// Define routes
-	http.HandleFunc("/posts", handler.GetPosts)
-	http.HandleFunc("/post/{slug}", handler.GetPost)
-
-	// Start the server
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	httpServer := &httpserver.HttpServer{}
+	httpServer.ListenAndServe(":8080")
 }
